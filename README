@@ -1,3 +1,25 @@
 Anonymous_identity uses socksyipy, a indirect fork of https://code.google.com/p/socksipy-branch/. The script
 mainly scrapes the fakenamegenerator.com site to generate identites. It adds proxy (SOCKS5, SOCKS4, HTTP) 
-support sucht that I am able to programmatically generate identies in a anonymous way. 
+support sucht that you're able to programmatically generate identies in a anonymous way. 
+
+Example:
+
+Fire up a python3 shell in the repository directory.
+
+Python 3.2.3 (default, Oct 19 2012, 19:53:16) 
+[GCC 4.7.2] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from identity_generator import anon_identity
+>>> anon_identity()
+[+] Generated a random and anonymous identity:
+phone_number........330-326-5139
+weight..............5139209.0 pounds (95.0 kilograms)
+full_name...........Ronald M. Tate
+address.............1000 Derek Drive
+gender..............male
+blood_group.........A+
+mother_maiden_name..Gupta
+birthdate...........April 22, 16942 (71 years old)
+height..............5' 10" (177 centimeters)
+>>> 
+

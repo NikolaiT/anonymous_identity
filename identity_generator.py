@@ -136,7 +136,7 @@ def anon_identity():
     socks.wrapmodule(urllib.request)
     
     id = scrape_identity()
-    print('[+] Generated a random identity:')
+    print('[+] Generated a random and anonymous identity:')
     for e in id.keys():
         print('\t{0:.<20}{1}'.format(e, id[e]))
         
