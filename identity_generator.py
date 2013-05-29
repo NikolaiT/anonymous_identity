@@ -64,7 +64,7 @@ def scrape_identity(sex='m', country_code='us', nameset_code='us'):
     identity = {
         'full_name': '',
         'address': '',
-        'gender': '',
+        'gender': s,
         'birthdate': '',
         'phone_number': '',
         'mother_maiden_name': '',
@@ -76,7 +76,7 @@ def scrape_identity(sex='m', country_code='us', nameset_code='us'):
     try:
         # Pass a file like object to the parser. This one liner
         # openes the http connection and parses the whole html file in a 
-        # Etree object. Kinda straightforward.
+        # etree object. Kinda straightforward.
         dom = lxml.html.parse(urllib.request.urlopen(request)).getroot()
         # Find the <div class="address"> element in the html source and
         # parse the identity name and the address.
@@ -90,11 +90,12 @@ def scrape_identity(sex='m', country_code='us', nameset_code='us'):
         identity['phone_number'] = dom.find_class('tel')[0].getchildren()[0].text.strip()
         
         # Now it's getting increasingly complicated because we don't have any good 
-        # needles to extract the elements where are interested in. We have to partly work
-        # with indexes which is prone for error. But when the page is changed, when some
-        # identity element is interchanged you have to change the following code most likely.
+        # needles to extract the elements we are interested in. We have to partly work around
+        # with indices which itself is prone for errors, because whenver the order of 
+        # the elements which constitute the identity, or the class name of the div containers
+        # holding the information changes, we have to alter the parsers functionality.
         
-        # All elements of interest are in the <div class=extra>
+        # All elements of interest are in the <div class=extra>.
         id_elements = []
         for i in dom.find_class('extra')[0].find_class('lab'):
             n = i.getnext()
@@ -102,7 +103,7 @@ def scrape_identity(sex='m', country_code='us', nameset_code='us'):
                 id_elements.append(n.text)
         
         # Clean the list.
-        id_elements = [x for x in id_elements if x]
+        id_elements = [x.strip() for x in id_elements if x]
         
         # Now harvest the generated identity entities.
         identity['mother_maiden_name'] = id_elements[2]
@@ -110,7 +111,7 @@ def scrape_identity(sex='m', country_code='us', nameset_code='us'):
         identity['blood_group'] = id_elements[13]
         identity['weight'] = id_elements[14]
         identity['height'] = id_elements[15]
-
+        
         return identity
     except urllib.HTTPError as err:
         if err.code != 404:
@@ -120,6 +121,24 @@ def scrape_identity(sex='m', country_code='us', nameset_code='us'):
     # Catching lxml specific errors.
     except Exception as e:
         print('Some error occured while lxml tried to parse.', e[0].args)
-            
+ 
+
+def anon_identity():
+    """This function is a example how to use scrape_identity() anonymously
+       through TOR. Used like that, you don't have to worry that your generated
+       identity is matched to your IP address and therefore to your real identity.
+       
+    """
+    
+    # Set up a socks socket. You might want to fire up your local TOR PROXY.
+    # Just download TOR here https://www.torproject.org/ and then start tor.
+    socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5,'127.0.0.1', 9050)
+    socks.wrapmodule(urllib.request)
+    
+    id = scrape_identity()
+    print('[+] Generated a random identity:')
+    for e in id.keys():
+        print('\t{0:.<20}{1}'.format(e, id[e]))
+        
 if __name__ == '__main__':
-    scrape_identity()
+    anon_identity()
