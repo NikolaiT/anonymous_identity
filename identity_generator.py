@@ -51,31 +51,75 @@ def scrape_identity(sex='m', country_code='us', nameset_code='us'):
         return
         
     # Build our litte HTTP request. fakenamegenerator.com insits on playing
-    # the sorehead, because we need to forge a normal looking browser request.
+    # the sorehead, therefore we need to forge a normal looking browser request 
+    # with acting like we have a browserlike UA.
     # Common UAs?
     # => http://techblog.willshouse.com/2012/01/03/most-common-user-agents/
     build_url = 'http://fakenamegenerator.com/gen-{0}-{1}-{2}.php'.format(s, nameset_code, country_code)
     request = urllib.request.Request(build_url)
     request.add_header('User-Agent',
         'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.64 Safari/537.31')
-    request.add_header('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
+    request.add_header('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8') # Maybe redundant.
 
+    identity = {
+        'full_name': '',
+        'address': '',
+        'gender': '',
+        'birthdate': '',
+        'phone_number': '',
+        'mother_maiden_name': '',
+        'blood_group': '',
+        'height': '',
+        'weight': '',
+    }
+    
     try:
-        f = urllib.request.urlopen(request)
-        html = f.read().decode('utf-8')
-
-    except HTTPError as err:
-        if err.code != 404:
-            print('HTTP Error:',err.code)
-    except URLError as err:
-        print('HTTP Error:',err.code)
+        # Pass a file like object to the parser. This one liner
+        # openes the http connection and parses the whole html file in a 
+        # Etree object. Kinda straightforward.
+        dom = lxml.html.parse(urllib.request.urlopen(request)).getroot()
+        # Find the <div class="address"> element in the html source and
+        # parse the identity name and the address.
+        e = dom.find_class('address')
+        for i in e[0].iterchildren():
+            if i.tag == 'h3':
+                identity['full_name'] = i.text.strip()
+            if i.tag == 'div':
+                identity['address'] = i.text.strip()
+        # Get the phone number.
+        identity['phone_number'] = dom.find_class('tel')[0].getchildren()[0].text.strip()
         
-    try:
-		dom = lxml.html.fromstring(html)
-		links = dom.cssselect('a')
-	except:
-		print('Some error occured while lxml tried to parse')
-		sys.exit(1)
+        # Now it's getting increasingly complicated because we don't have any good 
+        # needles to extract the elements where are interested in. We have to partly work
+        # with indexes which is prone for error. But when the page is changed, when some
+        # identity element is interchanged you have to change the following code most likely.
+        
+        # All elements of interest are in the <div class=extra>
+        id_elements = []
+        for i in dom.find_class('extra')[0].find_class('lab'):
+            n = i.getnext()
+            if n.tag == 'li':
+                id_elements.append(n.text)
+        
+        # Clean the list.
+        id_elements = [x for x in id_elements if x]
+        
+        # Now harvest the generated identity entities.
+        identity['mother_maiden_name'] = id_elements[2]
+        identity['birthdate'] = id_elements[3]
+        identity['blood_group'] = id_elements[13]
+        identity['weight'] = id_elements[14]
+        identity['height'] = id_elements[15]
+
+        return identity
+    except urllib.HTTPError as err:
+        if err.code != 404:
+            print('HTTP Error:', err.code)
+    except urllib.URLError as err:
+        print('HTTP Error:', err.code)
+    # Catching lxml specific errors.
+    except Exception as e:
+        print('Some error occured while lxml tried to parse.', e[0].args)
             
 if __name__ == '__main__':
     scrape_identity()
