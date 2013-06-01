@@ -1,5 +1,6 @@
 import socks
 import urllib.request
+import urllib.error
 import re
 import lxml.html
 import time
@@ -127,15 +128,15 @@ def scrape_identity(sex='m', country_code='us', nameset_code='us'):
         return identity
         
     # Some connection error, either server or client side.
-    except urllib.HTTPError as err:
+    except urllib.error.HTTPError as err:
         print('HTTP Error: ', err.code)
     # The URL is apparently invalid.
-    except urllib.URLError as err:
+    except urllib.error.URLError as err:
         print('URL Error: ', err.code)
     # Catching lxml specific errors and other exceptions. Doesn't 
     # catch SystemExit and KeyboardInterrupt exceptions though.
     except Exception as e:
-        print('Some error occured while lxml tried to parse.', e[0].args)
+        print('Some error occured while lxml tried to parse.', e.args[0])
  
 
 def anon_identity():
